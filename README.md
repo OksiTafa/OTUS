@@ -1,2 +1,2 @@
 # OTUS
-домашняя работа
+домашняя работа для курса "Python Developer. Basic"
