@@ -152,3 +152,10 @@ class PhoneBook:
             return True
         else:
             return False
+
+    def show_all_contacts(self):
+        # реализация вывода всех контактов
+        for i in self.contacts:
+            print(f'{i["name"]} ({i["note"]}): {i["phone"]}')
+
+        return
