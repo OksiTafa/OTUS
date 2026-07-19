@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block title %} Каталог готовых историй {% endblock %}
+
+{% block link %}
+<link href="../../css/product.css" rel="stylesheet"/>
+{% endblock %}
+{% block content %}
+<!-- Карточки историй -->
+<div class="container marketing">
+    <div class="row row-cols-1 row-cols-md-2 g-4">
+        {% for story in stories %}
+        <div class="col">
+            <div class="text-bg-dark h-100 p-4 text-center rounded">
+                <div class="my-3 py-3">
+                    <h2 class="display-5">{{ story.title }}</h2>
+                    <p class="lead">{{ story.description }}</p>
+                    <a href="/catalog/{{ story.id }}" class="btn btn-primary">Подробнее</a>
+                </div>
+                <div class="bg-body-tertiary shadow-sm mx-auto"
+                     style="width: 80%; height: 300px; border-radius: 21px 21px 0 0;
+                 background-image: url('/src/{{ story.id }}/preview.jpg');
+               background-size: cover;
+               background-position: center;"
+                ></div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
