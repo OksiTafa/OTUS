@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %} {{ story.title }} {% endblock %}
+{% block content %}
+<div class="container marketing">
+    <hr class="featurette-divider"/>
+    <div class="row featurette">
+        <div class="col-md-7">
+            <h2 class="featurette-heading fw-normal lh-1">
+                <span class="text-body-secondary"> {{ story.title }}</span>
+            </h2>
+            <p class="lead">
+                {{ story.full_text }}
+            </p>
+        </div>
+        <div class="col-md-5">
+            <!-- Карусель с превью -->
+            <div id="storyCarousel" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-inner">
+                    {% for photo in photos if photo.split('/')[-1].startswith('photo') %}
+                    <div class="carousel-item {% if loop.first %}active{% endif %}">
+                        <img src="{{ photo }}"
+                             class="d-block w-100"
+                             alt="Фото {{ loop.index }}"
+                             style="height: 400px; object-fit: cover; border-radius: 10px;"
+                             onerror="this.src='https://via.placeholder.com/500x500/712cf9/ffffff?text=Фото+{{ loop.index }}'">
+                    </div>
+                    {% endfor %}
+                </div>
+                <!-- Кнопки управления -->
+                <button class="carousel-control-prev" type="button" data-bs-target="#storyCarousel"
+                        data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Предыдущий</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#storyCarousel"
+                        data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Следующий</span>
+                </button>
+            </div>
+            <!-- Превью под каруселью -->
+            <div class="row mt-3">
+                <div class="col">
+                    <div class="d-flex justify-content-center gap-2">
+                        {% for photo in photos if photo.split('/')[-1].startswith('photo') %}
+                        <img src="{{ photo }}"
+                             class="rounded cursor-pointer"
+                             style="width: 60px; height: 60px; object-fit: cover; cursor: pointer; border: 2px solid {% if loop.first %}#712cf9{% else %}transparent{% endif %};"
+                             onclick="$('#storyCarousel').carousel({{ loop.index0 }})"
+                             onerror="this.src='https://via.placeholder.com/80x80/712cf9/ffffff?text={{ loop.index }}'"
+                             alt="Превью {{ loop.index }}">
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
