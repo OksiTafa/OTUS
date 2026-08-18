@@ -6,19 +6,19 @@ from django.core.exceptions import ValidationError
 class ProductModelForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['name','description','price','category']
+        fields = ['name', 'description', 'price', 'category']
         labels = {
-            'name' : 'Заголовок',
-            'description' : 'Описание',
-            'price' : 'Цена',
-            'category' : 'Категория'
+            'name': 'Заголовок',
+            'description': 'Описание',
+            'price': 'Цена',
+            'category': 'Категория'
         }
         ''' для каждого поля указываем, как оно будет отображаться в HTML'''
         widgets = {
-            'name' : forms.TextInput(attrs={'class':'form-control'}),
-            'description' : forms.Textarea(attrs={'class':'form-control'}),
-            'price' : forms.NumberInput(attrs={'class':'form-control'}),
-            'category' : forms.Select(attrs={'class':'form-control'})
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control'}),
+            'price': forms.NumberInput(attrs={'class': 'form-control'}),
+            'category': forms.Select(attrs={'class': 'form-control'})
         }
 
     def clean_price(self):

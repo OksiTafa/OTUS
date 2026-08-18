@@ -1,6 +1,4 @@
 from django.contrib import admin
-from django.contrib.admin import action
-
 from .models import Product, Category
 
 
@@ -41,13 +39,9 @@ class ProductAdmin(admin.ModelAdmin):
                 count += 1
         self.message_user(request, f'Промо убрано из {count} товаров')
 
-
-
-    actions = (apply_discount,add_promo_to_description,remove_promo_from_description)
+    actions = (apply_discount, add_promo_to_description, remove_promo_from_description)
 
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ('name', 'description')
-
-

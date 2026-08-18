@@ -4,10 +4,16 @@ from django.http import HttpResponse
 from store_app.models import Product, Category
 from .forms import ProductModelForm
 
+
 # Create your views here.
 def index(request):
     """Главная страница"""
     return render(request, 'store_app/index.html')
+
+
+def about(request):
+    """Страница о нас."""
+    return HttpResponse("<h2>Страница о нас.</h2><hr>Добро пожаловать в наш магазин!")
 
 def catalog(request):
     """Каталог"""
@@ -15,24 +21,25 @@ def catalog(request):
     categories = Category.objects.prefetch_related('products').all()
 
     context = {
-        'catalog' : catalog1,
+        'catalog': catalog1,
         'categories': categories,
     }
     return render(request, 'store_app/catalog.html', context=context)
+
 
 def product_detail(request, product_id):
     """Товар"""
     product = get_object_or_404(Product, id=product_id)
 
     context = {
-        'product' : product,
-        'name' : product.name,
-        'description' : product.description,
-        'price' : product.price,
-        'created_at' : product.created_at,
-        'category' : product.category,
-        'discount' : product.discount,
-        'final_price' : product.final_price,
+        'product': product,
+        'name': product.name,
+        'description': product.description,
+        'price': product.price,
+        'created_at': product.created_at,
+        'category': product.category,
+        'discount': product.discount,
+        'final_price': product.final_price,
     }
     return render(request, 'store_app/product_detail.html', context=context)
 
@@ -51,6 +58,7 @@ def product_add(request):
         'title': 'Добавление товара'
     }
     return render(request, 'store_app/product_form.html', context=context)
+
 
 def product_edit(request, product_id):
     """ Редактирование товара """
