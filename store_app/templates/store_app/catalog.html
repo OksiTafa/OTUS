@@ -1,0 +1,47 @@
+{% extends 'store_app/base.html' %}
+
+{% block title %}Каталог товаров{% endblock %}
+
+{% block content %}
+<h1>Каталог товаров</h1>
+
+{% for category in categories %}
+<h2 class="mt-4">{{ category.name }}</h2>
+{% if category.description %}
+<p class="text-muted">{{ category.description }}</p>
+{% endif %}
+
+<div class="row">
+    {% for product in category.products.all %}
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">{{ product.name }}</h5>
+                <p class="card-text">{{ product.description|truncatewords:30 }}</p>
+                {% if product.discount > 0 %}
+                <p class="card-text">
+                    <span class="text-muted text-decoration-line-through">{{ product.price }} руб.</span>
+                    <span class="text-danger fw-bold">
+                        {{ product.final_price|floatformat:2 }} руб.
+                    </span>
+                    <span class="badge bg-danger">-{{ product.discount }}%</span>
+                </p>
+                {% else %}
+                <p class="card-text">
+                    <strong>{{ product.price }} руб.</strong>
+                </p>
+                {% endif %}
+                <a href="{% url 'product' product.id %}" class="btn btn-primary">Подробнее</a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <p class="text-muted">В этой категории товаров пока нет</p>
+    </div>
+    {% endfor %}
+</div>
+{% empty %}
+<p class="text-center">Категорий пока нет</p>
+{% endfor %}
+{% endblock %}
