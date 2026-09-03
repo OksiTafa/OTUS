@@ -1,0 +1,33 @@
+# Секреты
+.env
+
+# IDE
+.idea/
+
+# Папки Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Виртуальное окружение
+venv/
+.venv/
+
+# Данные
+data/raw/*
+data/questionnaire/*
+data/processed/*
+!data/raw/.gitkeep
+!data/questionnaire/.gitkeep
+!data/processed/.gitkeep
+
+# Модели
+models_storage/*.pkl
+
+# Логи
+logs/
+*.log
+
+# Временные файлы
+.DS_Store
+Thumbs.db
