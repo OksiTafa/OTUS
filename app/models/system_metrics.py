@@ -1,7 +1,8 @@
 import psutil
+from app.models.base_collector import BaseCollector
 
 
-class SystemMetricsCollector:
+class SystemMetricsCollector(BaseCollector):
     """
           Собирает метрики системы через psutil.
 
@@ -14,7 +15,6 @@ class SystemMetricsCollector:
     """
 
     def __init__(self):
-        self.metrics = {}
         # "Прогрев" - первый вызов вернёт 0.0
         psutil.cpu_percent(interval=None)
 
@@ -31,3 +31,11 @@ class SystemMetricsCollector:
             "percent": memory.percent,
             "free": memory.free,
         }
+
+    def collect(self) -> dict:
+        """Единый метод сбора CPU и RAM"""
+        self.metrics = {
+            "cpu": self.collect_cpu(),
+            "ram": self.collect_ram(),
+        }
+        return self.metrics

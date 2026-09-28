@@ -31,3 +31,6 @@ logs/
 # Временные файлы
 .DS_Store
 Thumbs.db
+
+# Тестовые скрипты
+collect_test.py

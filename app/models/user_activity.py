@@ -9,7 +9,7 @@ import pygetwindow as gw
 import psutil
 import ctypes
 from ctypes import wintypes
-
+from app.models.base_collector import BaseCollector
 
 class LASTINPUTINFO(ctypes.Structure):
     """Для определения времени бездействия"""
@@ -19,11 +19,8 @@ class LASTINPUTINFO(ctypes.Structure):
     ]
 
 
-class UserActivityTracker:
+class UserActivityTracker(BaseCollector):
     """Отслеживает активность пользователя"""
-
-    def __init__(self):
-        pass
 
     def collect_window(self) -> dict:
         """
@@ -62,6 +59,15 @@ class UserActivityTracker:
             'is_active': idle_seconds < 60
         }
 
+    def collect(self):
+        """Единый метод: собирает и окно, и активность"""
+        self.metrics = {
+            "window" : self.collect_window(),
+            "activity" : self.collect_activity()
+        }
+        return self.metrics
+
+
     def _get_pid_from_hwnd(self, hwnd) -> int:
         """Получает PID процесса по handle окна"""
         pid = wintypes.DWORD()
@@ -82,7 +88,7 @@ class UserActivityTracker:
         last_input.cbSize = ctypes.sizeof(LASTINPUTINFO)
 
         if ctypes.windll.user32.GetLastInputInfo(ctypes.byref(last_input)):
-            millis = ctypes.windll.user32.GetTickCount() - last_input.dwTime
+            millis = ctypes.windll.kernel32.GetTickCount() - last_input.dwTime
             if millis < 0:
                 millis += 2 ** 32
             return millis / 1000.0
@@ -93,9 +99,6 @@ class UserActivityTracker:
         """Определяет состояние пользователя"""
         if idle_seconds < 60:
             return "активен"
-        elif idle_seconds < 300:
-            return "короткий перерыв"
         else:
-            return "отсутствует"
-
+            return "не активен"
 

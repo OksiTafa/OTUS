@@ -1,14 +1,19 @@
-from app.models.metrics_collector import MetricCollector
+from config.settings import PROCESS_CATEGORIES
 
-class CollectorController:
-    """
-    Управляет процессом сбора данных:
-    - Запуск/остановка цикла
-    - Сохранение в CSV
-    - Логирование
-    - Обработка ошибок
-    """
 
-    def __init__(self, collector: MetricCollector):
-        self.collector = collector
-        self
+class ProcessClassifier:
+    """
+    Классифицирует процессы по категориям.
+    Определяет, чем занимается пользователь.
+    """
+    def classify(self, process_name: str) -> str:
+        if not process_name:
+            return "unknown"
+
+        process_name = process_name.lower()
+
+        for category, processes in PROCESS_CATEGORIES.items():
+            if process_name in [p.lower() for p in processes]:
+                return category
+
+        return "other"
