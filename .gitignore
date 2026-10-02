@@ -34,3 +34,8 @@ Thumbs.db
 
 # Тестовые скрипты
 collect_test.py
+
+# PyInstaller
+build/
+dist/
+*.spec

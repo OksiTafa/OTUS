@@ -8,8 +8,11 @@ import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Загружаем .env (если он есть)
-load_dotenv()
+# Загружаем .env: рядом с exe (для сборки) или в рабочей папке
+if getattr(sys, 'frozen', False):
+    load_dotenv(Path(sys.executable).resolve().parent / ".env")
+else:
+    load_dotenv()
 
 
 def get_app_dir() -> Path:
@@ -110,3 +113,59 @@ CSV_FIELD_NAMES = [
     "ram.percent",
     "ram.free",
 ]
+
+# ============================================
+# Параметры анкеты MBI
+# ============================================
+
+# Сколько служебных колонок в CSV ответов (время + ФИО/почта)
+QUESTIONNAIRE_SKIP_COLUMNS = int(os.getenv("QUESTIONNAIRE_SKIP_COLUMNS", 2))
+
+# Количество вопросов в анкете MBI
+# (сокращённый вариант для IT-специалистов: по 5 вопросов на каждую субшкалу)
+QUESTIONNAIRE_ITEMS_COUNT = int(os.getenv("QUESTIONNAIRE_ITEMS_COUNT", 15))
+
+# Максимальный балл одного вопроса (шкала частоты 0..6)
+MBI_MAX_ITEM_SCORE = int(os.getenv("MBI_MAX_ITEM_SCORE", 6))
+
+# Соответствие субшкал номерам вопросов (нумерация с 1)
+# reversed=True означает: чем выше сырой балл, тем ЛУЧШЕ состояние
+# (обратное направление относительно выгорания).
+MBI_SUBSCALES = {
+    "emotional_exhaustion": {
+        "items": [1, 2, 3, 4, 5],
+        "reversed": False,
+    },
+    "depersonalization": {
+        "items": [6, 7, 8, 9, 10],
+        "reversed": False,
+    },
+    "personal_accomplishment": {
+        "items": [11, 12, 13, 14, 15],
+        "reversed": True,
+    },
+}
+
+# Пороги уровней для сокращённого варианта MBI (макс. по субшкале = 30)
+# Это начала диапазонов: low / medium / high.
+#   ЭИ:   0-10 низкий,  11-20 средний,  21-30 высокий
+#   Д:    0-8  низкий,  9-18  средний,  19-30 высокий
+#   РА:   0-12 низкий (выгорание), 13-21 средний, 22-30 высокий (хорошо)
+# Для ЭИ и Д: чем больше баллов, тем сильнее выгорание.
+# Для РА: шкала обратная — чем больше баллов, тем лучше достижения.
+MBI_THRESHOLDS = {
+    "emotional_exhaustion": {"low": 0, "medium": 11, "high": 21},
+    "depersonalization": {"low": 0, "medium": 9, "high": 19},
+    "personal_accomplishment": {"low": 0, "medium": 13, "high": 22},
+}
+
+# Правило определения выгорания (целевая переменная для ML):
+# выгорание = 1, если ЭИ >= 21 ИЛИ Д >= 19 ИЛИ РА <= 12.
+MBI_BURNOUT_RULES = {
+    "emotional_exhaustion": ">= high",
+    "depersonalization": ">= high",
+    "personal_accomplishment": "< medium",
+}
+
+# Папка для результатов анкет
+QUESTIONNAIRE_RESULTS_DIR = BASE_DIR / "data" / "questionnaire"
