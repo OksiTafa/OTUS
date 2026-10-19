@@ -7,6 +7,7 @@ import time
 from config import settings
 from app.models.base_collector import BaseCollector
 from app.models.metrics import CollectedMetrics
+from app.models.windows_user import get_user_name
 from loguru import logger
 from pydantic import ValidationError
 
@@ -77,6 +78,7 @@ class CollectorController:
 
         row = self._flatten_dict(validated.model_dump())
         row["timestamp"] = datetime.now().isoformat()
+        row["user"] = get_user_name()
 
         # Отбираем только известные поля
         filtered = {k: row.get(k, "") for k in self.FIELD_NAMES}

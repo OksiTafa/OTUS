@@ -63,6 +63,10 @@ PROCESS_CATEGORIES = {
         "idea64.exe",         # IntelliJ IDEA
         "sublime_text.exe",   # Sublime Text
         "Far.exe",            # FAR Manager
+        "zed.exe",            # Zed
+        "TOTALCMD64.EXE",     # Total Commander
+        "WindowsTerminal.exe",  # Windows Terminal
+        "Docker Desktop.exe",   # Docker Desktop
     ],
     "api": [
         "postman.exe",        # Postman
@@ -84,8 +88,11 @@ PROCESS_CATEGORIES = {
         "firefox.exe",          # Mozilla Firefox
         "msedge.exe",           # Microsoft Edge
         "opera.exe",            # Opera
-        "yandex.exe",           # Яндекс Браузер
+        "browser.exe",          # Яндекс Браузер
         "vivaldi.exe",          # Vivaldi
+    ],
+    "ai": [
+        "claude.exe",        # Claude
     ],
     "messenger": [
         "Teams.exe",         # Microsoft Teams
@@ -94,11 +101,18 @@ PROCESS_CATEGORIES = {
         "whatsapp.exe",      # WhatsApp
         "discord.exe",       # Discord
         "zoom.exe",          # Zoom
+        "app.exe",           # Корпоративные созвоны (hippo)
     ],
 }
 
+# Имя пользователя (ФИО), под которым работает трекер.
+# Если не задано — берётся из учётной записи Windows (GetUserNameExW)
+# или системный логин.
+USER_NAME = os.getenv("USER_NAME", "")
+
 # Список колонок для CSV-файла с метриками
 CSV_FIELD_NAMES = [
+    "user",
     "timestamp",
     "window.window_title",
     "window.process_name",
@@ -118,8 +132,8 @@ CSV_FIELD_NAMES = [
 # Параметры анкеты MBI
 # ============================================
 
-# Сколько служебных колонок в CSV ответов (время + ФИО/почта)
-QUESTIONNAIRE_SKIP_COLUMNS = int(os.getenv("QUESTIONNAIRE_SKIP_COLUMNS", 2))
+# Сколько служебных колонок в CSV ответов (время, возраст, ФИО, пол, стаж)
+QUESTIONNAIRE_SKIP_COLUMNS = int(os.getenv("QUESTIONNAIRE_SKIP_COLUMNS", 5))
 
 # Количество вопросов в анкете MBI
 # (сокращённый вариант для IT-специалистов: по 5 вопросов на каждую субшкалу)
@@ -167,5 +181,106 @@ MBI_BURNOUT_RULES = {
     "personal_accomplishment": "< medium",
 }
 
+# Общий уровень выгорания по MBI (mbi_level) — для сравнения с прогнозом модели.
+# Тяжесть субшкалы: 0/1/2 по уровню low/medium/high (для reversed-шкалы
+# наоборот: high = 0, low = 2). Итог:
+#   High   — burnout = 1 (сработало правило MBI_BURNOUT_RULES);
+#   Medium — сумма тяжестей >= MBI_OVERALL_MEDIUM_SCORE;
+#   Low    — иначе.
+MBI_OVERALL_MEDIUM_SCORE = int(os.getenv("MBI_OVERALL_MEDIUM_SCORE", 2))
+
 # Папка для результатов анкет
 QUESTIONNAIRE_RESULTS_DIR = BASE_DIR / "data" / "questionnaire"
+
+# CSV с ответами Google Forms (по умолчанию — выгруженный файл в data/questionnaire/)
+QUESTIONNAIRE_FILE = BASE_DIR / "data" / "questionnaire" / os.getenv(
+    "QUESTIONNAIRE_FILE", "answers.csv"
+)
+
+# Результаты обработки анкеты (полный цикл questionnaire)
+QUESTIONNAIRE_RESULTS_FILE = BASE_DIR / "data" / "questionnaire" / "mbi_results.csv"
+
+# ============================================
+# Параметры расчёта дневных признаков (features)
+# ============================================
+
+# Дневные признаки из метрик трекера (команда features)
+FEATURES_FILE = BASE_DIR / "data" / os.getenv("FEATURES_FILE", "features.csv")
+
+# Границы рабочего дня (ЧЧ:ММ): активность вне [START, END) — after_hours_work.
+# Для конкретного человека переопределяются в команде features
+# (--work-start / --work-end)
+WORK_DAY_START = os.getenv("WORK_DAY_START", "08:30")
+WORK_DAY_END = os.getenv("WORK_DAY_END", "17:30")
+
+# Работа вне рабочего дня засчитывается (after_hours_work = 1),
+# если занятых минут вне графика не меньше порога
+AFTER_HOURS_MIN_MINUTES = int(os.getenv("AFTER_HOURS_MIN_MINUTES", 10))
+
+# Категории процессов, время в которых считается рабочим (work_hours)
+WORK_CATEGORIES = ["ide", "api", "db", "ai", "messenger"]
+
+# Процесс экрана блокировки: такие замеры всегда считаются бездействием
+LOCK_SCREEN_PROCESS = "LockApp.exe"
+
+# Звонки: процессы-звонилки и подстроки заголовка окна звонка.
+# Во время звонка клавиатура и мышь простаивают (is_active = False),
+# поэтому окно звонка считается занятым временем, а не перерывом.
+CALL_PROCESSES = ["zoom.exe", "Teams.exe"]
+CALL_WINDOW_KEYWORDS = ["звонок"]
+
+# Перерыв — простой внутри рабочего дня длиной от MIN до MAX минут
+BREAK_MIN_MINUTES = int(os.getenv("BREAK_MIN_MINUTES", 5))
+BREAK_MAX_MINUTES = int(os.getenv("BREAK_MAX_MINUTES", 60))
+
+# Встреча — отрезок звонка не короче MIN минут;
+# отрезки с разрывом меньше MERGE_GAP минут склеиваются в одну встречу
+MEETING_MIN_MINUTES = int(os.getenv("MEETING_MIN_MINUTES", 5))
+MEETING_MERGE_GAP_MINUTES = int(os.getenv("MEETING_MERGE_GAP_MINUTES", 5))
+
+# Сон — ночной простой перед первой активностью дня. Больше MAX часов
+# (вечер без компьютера, выходные) или с разрывом в записи трекера — не считается (NaN)
+SLEEP_MAX_HOURS = float(os.getenv("SLEEP_MAX_HOURS", 12))
+
+# Сон по умолчанию — если ночной простой измерить нельзя
+SLEEP_DEFAULT_HOURS = float(os.getenv("SLEEP_DEFAULT_HOURS", 7))
+
+# ============================================
+# Параметры объединения данных (merge)
+# ============================================
+
+# Файл с метриками трекера (вход команды features)
+TRACKER_FILE = BASE_DIR / "raw_data" / os.getenv("TRACKER_FILE", "metrics.csv")
+
+# Итоговый объединённый датасет
+MERGED_FILE = BASE_DIR / "data" / os.getenv("MERGED_FILE", "merged_data.csv")
+
+# За сколько последних дней данных каждого пользователя усредняются признаки
+# (0 — за весь период)
+MERGE_WINDOW_DAYS = int(os.getenv("MERGE_WINDOW_DAYS", 14))
+
+# ============================================
+# Параметры обучения ML-модели
+# ============================================
+
+# Обучающий датасет (Kaggle: developer_burnout_7000, CSV или ZIP с одним CSV)
+TRAIN_DATA_FILE = BASE_DIR / "data" / os.getenv(
+    "TRAIN_DATA_FILE", "developer_burnout_7000.zip"
+)
+
+# Классы целевой переменной burnout_level (от низкого риска к высокому)
+BURNOUT_CLASSES = ["Low", "Medium", "High"]
+
+# Доля тестовой выборки и random_state для воспроизводимости
+TEST_SIZE = float(os.getenv("TEST_SIZE", 0.2))
+RANDOM_STATE = int(os.getenv("RANDOM_STATE", 42))
+
+# Папка и файл для сохранения обученной модели
+MODELS_DIR = BASE_DIR / "models_storage"
+MODEL_FILE = MODELS_DIR / os.getenv("MODEL_FILE", "burnout_model.pkl")
+
+# Папка для отчётов обучения (метрики, confusion matrix)
+OUTPUT_DIR = BASE_DIR / "output"
+
+# Прогноз выгорания по данным трекера (команда predict)
+PREDICTIONS_FILE = OUTPUT_DIR / os.getenv("PREDICTIONS_FILE", "predictions.csv")

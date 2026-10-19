@@ -1,4 +1,4 @@
-собираем приложение коммандой:
+собираем приложение командой:
 python -m PyInstaller --onefile --noconsole --name BurnoutTracker main.py
 
 Добавим в автозапуск:

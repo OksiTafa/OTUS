@@ -4,6 +4,7 @@
 - Расчёт индексов по 3 субшкалам
 - Классификация уровня по каждой субшкале
 - Определение целевой переменной "выгорание" (0/1) для ML
+- Общий уровень выгорания Low/Medium/High (mbi_level) — для сравнения с прогнозом
 - Сохранение результатов в data/questionnaire/
 """
 
@@ -79,12 +80,11 @@ class MBIQuestionnaireProcessor:
         answers_raw = self._raw.iloc[
             :, self.skip_columns:self.skip_columns + self.items_count
         ]
-        self._answers = answers_raw.apply(self._to_numeric)
+        self._answers = answers_raw.map(self._to_numeric)
         self._answers.columns = [f"q{i + 1}" for i in range(self.items_count)]
         return self
 
-    @staticmethod
-    def _to_numeric(value):
+    def _to_numeric(self, value):
         """Переводит ответ в число 0..6 (принимает цифры и текстовые метки)."""
         if pd.isna(value):
             return np.nan
@@ -97,8 +97,8 @@ class MBIQuestionnaireProcessor:
         except ValueError:
             pass
         label = " ".join(text.split())
-        if label in ANSWER_LABELS:
-            return ANSWER_LABELS[label]
+        if label in self.answer_labels:
+            return self.answer_labels[label]
         return np.nan
 
     # ------------------------------------------------------------------
@@ -150,6 +150,7 @@ class MBIQuestionnaireProcessor:
 
         levels = pd.DataFrame(index=self.scores.index)
         burnout_flags = []
+        severities = []
 
         for scale_name, cfg in settings.MBI_SUBSCALES.items():
             thresholds = settings.MBI_THRESHOLDS[scale_name]
@@ -166,7 +167,24 @@ class MBIQuestionnaireProcessor:
                 risk = self.scores[scale_name] < thresholds["medium"]
             burnout_flags.append(risk.fillna(False))
 
+            # Тяжесть по шкале: 0..2, для обратной шкалы — наоборот
+            level_index = self.scores[scale_name].apply(
+                lambda s: self.classify_scale(s, thresholds)
+            ).astype(float)
+            severities.append(2 - level_index if cfg["reversed"] else level_index)
+
         levels["burnout"] = pd.concat(burnout_flags, axis=1).any(axis=1).astype(int)
+
+        severity = pd.concat(severities, axis=1)
+        levels["mbi_level"] = np.select(
+            [
+                levels["burnout"] == 1,
+                severity.sum(axis=1) >= settings.MBI_OVERALL_MEDIUM_SCORE,
+                severity.notna().any(axis=1),
+            ],
+            ["High", "Medium", "Low"],
+            default="",
+        )
 
         self.levels = levels
         return levels
@@ -174,6 +192,29 @@ class MBIQuestionnaireProcessor:
     # ------------------------------------------------------------------
     # Итоговая таблица и сохранение
     # ------------------------------------------------------------------
+    @staticmethod
+    def _normalize_service_columns(service: pd.DataFrame) -> pd.DataFrame:
+        """Приводит служебные колонки к единому формату.
+
+        Google Forms называет колонку времени «Отметка времени»,
+        а ФИО — «ФИО». Для объединения данных нужны стандартные имена
+        timestamp и full_name.
+        """
+        rename_map = {}
+        for col in service.columns:
+            lowered = str(col).lower()
+            if "отметка" in lowered or "времен" in lowered:
+                rename_map[col] = "timestamp"
+            if "фио" in lowered or "ф.и.о" in lowered:
+                rename_map[col] = "full_name"
+        service = service.rename(columns=rename_map)
+
+        if "timestamp" not in service.columns and service.shape[1] >= 1:
+            service.insert(0, "timestamp", "")
+        if "full_name" not in service.columns and service.shape[1] >= 2:
+            service["full_name"] = service.iloc[:, 1]
+        return service
+
     def process(self) -> pd.DataFrame:
         """Полный цикл: загрузка → расчёт → классификация."""
         if self._answers is None:
@@ -181,7 +222,9 @@ class MBIQuestionnaireProcessor:
         self.compute_mbi()
         self.classify()
 
-        service = self._raw.iloc[:, :self.skip_columns].reset_index(drop=True)
+        service = self._normalize_service_columns(
+            self._raw.iloc[:, :self.skip_columns].reset_index(drop=True)
+        )
         result = pd.concat([service, self._answers, self.scores, self.levels], axis=1)
         self.results = result
         return result

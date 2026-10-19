@@ -39,3 +39,16 @@ collect_test.py
 build/
 dist/
 *.spec
+
+# CSV-файлы (данные, метрики, отчёты)
+*.csv
+
+# Архивы (датасеты Kaggle)
+*.zip
+
+# Markdown-файлы, кроме README
+*.md
+!README.md
+
+# Отчёты обучения
+output/*.txt
