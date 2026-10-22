@@ -30,7 +30,7 @@
                 <div class="card-body">
                     <h5 class="card-title">{{ product.name }}</h5>
                     <p class="card-text">{{ product.description|truncatewords:15 }}</p>
-                    <p class="card-text"><strong>{{ product.price }} руб.</strong></p>
+                    <p class="card-text"><strong>{{ product.final_price|floatformat:2 }} руб.</strong></p>
                     <a href="{% url 'product' product.id %}" class="btn btn-outline-primary">Подробнее</a>
                 </div>
             </div>

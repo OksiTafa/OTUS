@@ -14,7 +14,15 @@
 <div class="card">
     <div class="card-body">
         <h1 class="card-title">{{ product.name }}</h1>
+        {% if product.discount > 0 %}
+        <h3 class="mb-4">
+            <span class="text-muted text-decoration-line-through">{{ product.price }} руб.</span>
+            <span class="text-danger">{{ product.final_price|floatformat:2 }} руб.</span>
+            <span class="badge bg-danger">-{{ product.discount }}%</span>
+        </h3>
+        {% else %}
         <h3 class="text-primary mb-4">{{ product.price }} руб.</h3>
+        {% endif %}
         <p class="card-text">{{ product.description }}</p>
         <hr>
         <p class="card-text">
@@ -25,4 +33,6 @@
 </div>
 
 <a href="{% url 'catalog' %}" class="btn btn-outline-secondary mt-3">← Назад в каталог</a>
+<a href="{% url 'product_edit' product.id %}" class="btn btn-primary mt-3">Редактировать</a>
+<a href="{% url 'product_delete' product.id %}" class="btn btn-danger mt-3">Удалить</a>
 {% endblock %}

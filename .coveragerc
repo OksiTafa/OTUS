@@ -1,0 +1,10 @@
+# Настройки покрытия для pytest --cov
+[run]
+source = store_app
+branch = True
+omit =
+    store_app/migrations/*
+
+[report]
+show_missing = True
+skip_empty = True

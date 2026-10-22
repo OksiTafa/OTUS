@@ -1,0 +1,18 @@
+{% extends 'store_app/base.html' %}
+
+{% block title %}О нас{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'index' %}">Главная</a></li>
+        <li class="breadcrumb-item active">О нас</li>
+    </ol>
+</nav>
+
+<h1>Страница о нас</h1>
+<hr>
+<p class="lead">Добро пожаловать в наш магазин!</p>
+
+<a href="{% url 'catalog' %}" class="btn btn-primary mt-3">Перейти в каталог</a>
+{% endblock %}
