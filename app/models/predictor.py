@@ -32,11 +32,11 @@ class BurnoutPredictor:
     """Пайплайн: модель + признаки трекера → вероятности → сравнение с MBI → CSV."""
 
     def __init__(
-            self,
-            model_file=None,
-            features_file=None,
-            questionnaire_file=None,
-            window_days=None,
+        self,
+        model_file=None,
+        features_file=None,
+        questionnaire_file=None,
+        window_days=None,
     ):
         """
         :param model_file: файл модели (по умолчанию models_storage/burnout_model.pkl)
@@ -129,8 +129,10 @@ class BurnoutPredictor:
             )
             mbi_text = (
                 f", по анкете MBI: {row.mbi_level}"
-                if "mbi_level" in result.columns and isinstance(row.mbi_level, str)
-                and row.mbi_level else ""
+                if "mbi_level" in result.columns
+                and isinstance(row.mbi_level, str)
+                and row.mbi_level
+                else ""
             )
             logger.info(f"{row.user}: {row.prediction} ({probs}){mbi_text}")
         return result

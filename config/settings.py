@@ -9,7 +9,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 # Загружаем .env: рядом с exe (для сборки) или в рабочей папке
-if getattr(sys, 'frozen', False):
+if getattr(sys, "frozen", False):
     load_dotenv(Path(sys.executable).resolve().parent / ".env")
 else:
     load_dotenv()
@@ -21,14 +21,14 @@ def get_app_dir() -> Path:
     Работает и для Python-скрипта, и для скомпилированного .exe.
     """
     try:
-        if getattr(sys, 'frozen', False):
+        if getattr(sys, "frozen", False):
             # Режим .exe (PyInstaller): sys.executable - путь к exe
             return Path(sys.executable).resolve().parent
         elif os.getenv("OUTPUT_DIR"):
             return Path(os.getenv("OUTPUT_DIR"))
         else:
             return Path(__file__).resolve().parent.parent
-    except Exception as e:
+    except Exception:
         return Path(__file__).resolve().parent.parent
 
 
@@ -43,9 +43,9 @@ COLLECTION_INTERVAL = int(os.getenv("COLLECTION_INTERVAL", 60))
 DAYS_TO_COLLECT = int(os.getenv("DAYS_TO_COLLECT", 14))
 
 # Путь для сохранения данных
-BASE_DIR = get_app_dir()      #корень проекта
-RAW_DATA_DIR = BASE_DIR /"raw_data"
-LOG_DIR = BASE_DIR /"logs"
+BASE_DIR = get_app_dir()  # корень проекта
+RAW_DATA_DIR = BASE_DIR / "raw_data"
+LOG_DIR = BASE_DIR / "logs"
 
 # Имена файлов (можно переопределить через .env)
 METRICS_FILE = os.getenv("METRICS_FILE", "metrics.csv")
@@ -58,50 +58,50 @@ LOG_PATH = LOG_DIR / LOG_FILE
 # Список процессов, которые считаются "активными" (для категоризации)
 PROCESS_CATEGORIES = {
     "ide": [
-        "code.exe",           # VS Code
-        "pycharm64.exe",      # PyCharm
-        "idea64.exe",         # IntelliJ IDEA
-        "sublime_text.exe",   # Sublime Text
-        "Far.exe",            # FAR Manager
-        "zed.exe",            # Zed
-        "TOTALCMD64.EXE",     # Total Commander
+        "code.exe",  # VS Code
+        "pycharm64.exe",  # PyCharm
+        "idea64.exe",  # IntelliJ IDEA
+        "sublime_text.exe",  # Sublime Text
+        "Far.exe",  # FAR Manager
+        "zed.exe",  # Zed
+        "TOTALCMD64.EXE",  # Total Commander
         "WindowsTerminal.exe",  # Windows Terminal
-        "Docker Desktop.exe",   # Docker Desktop
+        "Docker Desktop.exe",  # Docker Desktop
     ],
     "api": [
-        "postman.exe",        # Postman
-        "insomnia.exe",       # Insomnia
-        "swagger.exe",        # Swagger Editor
+        "postman.exe",  # Postman
+        "insomnia.exe",  # Insomnia
+        "swagger.exe",  # Swagger Editor
     ],
     "db": [
-        "dbeaver.exe",        # DBeaver
-        "pgadmin.exe",        # pgAdmin
-        "sqlite3.exe",        # SQLite
-        "sqlservr.exe",       # MS SQL Server
-        "ssms.exe",           # SSMS
-        "mysqlworkbench.exe", # MySQL Workbench
-        "datagrip64.exe",     # DataGrip
-        "navicat.exe",        # Navicat
+        "dbeaver.exe",  # DBeaver
+        "pgadmin.exe",  # pgAdmin
+        "sqlite3.exe",  # SQLite
+        "sqlservr.exe",  # MS SQL Server
+        "ssms.exe",  # SSMS
+        "mysqlworkbench.exe",  # MySQL Workbench
+        "datagrip64.exe",  # DataGrip
+        "navicat.exe",  # Navicat
     ],
     "browser": [
-        "chrome.exe",           # Google Chrome
-        "firefox.exe",          # Mozilla Firefox
-        "msedge.exe",           # Microsoft Edge
-        "opera.exe",            # Opera
-        "browser.exe",          # Яндекс Браузер
-        "vivaldi.exe",          # Vivaldi
+        "chrome.exe",  # Google Chrome
+        "firefox.exe",  # Mozilla Firefox
+        "msedge.exe",  # Microsoft Edge
+        "opera.exe",  # Opera
+        "browser.exe",  # Яндекс Браузер
+        "vivaldi.exe",  # Vivaldi
     ],
     "ai": [
-        "claude.exe",        # Claude
+        "claude.exe",  # Claude
     ],
     "messenger": [
-        "Teams.exe",         # Microsoft Teams
-        "slack.exe",         # Slack
-        "telegram.exe",      # Telegram
-        "whatsapp.exe",      # WhatsApp
-        "discord.exe",       # Discord
-        "zoom.exe",          # Zoom
-        "app.exe",           # Корпоративные созвоны (hippo)
+        "Teams.exe",  # Microsoft Teams
+        "slack.exe",  # Slack
+        "telegram.exe",  # Telegram
+        "whatsapp.exe",  # WhatsApp
+        "discord.exe",  # Discord
+        "zoom.exe",  # Zoom
+        "app.exe",  # Корпоративные созвоны (hippo)
     ],
 }
 
@@ -193,8 +193,8 @@ MBI_OVERALL_MEDIUM_SCORE = int(os.getenv("MBI_OVERALL_MEDIUM_SCORE", 2))
 QUESTIONNAIRE_RESULTS_DIR = BASE_DIR / "data" / "questionnaire"
 
 # CSV с ответами Google Forms (по умолчанию — выгруженный файл в data/questionnaire/)
-QUESTIONNAIRE_FILE = BASE_DIR / "data" / "questionnaire" / os.getenv(
-    "QUESTIONNAIRE_FILE", "answers.csv"
+QUESTIONNAIRE_FILE = (
+    BASE_DIR / "data" / "questionnaire" / os.getenv("QUESTIONNAIRE_FILE", "answers.csv")
 )
 
 # Результаты обработки анкеты (полный цикл questionnaire)
@@ -264,8 +264,8 @@ MERGE_WINDOW_DAYS = int(os.getenv("MERGE_WINDOW_DAYS", 14))
 # ============================================
 
 # Обучающий датасет (Kaggle: developer_burnout_7000, CSV или ZIP с одним CSV)
-TRAIN_DATA_FILE = BASE_DIR / "data" / os.getenv(
-    "TRAIN_DATA_FILE", "developer_burnout_7000.zip"
+TRAIN_DATA_FILE = (
+    BASE_DIR / "data" / os.getenv("TRAIN_DATA_FILE", "developer_burnout_7000.zip")
 )
 
 # Классы целевой переменной burnout_level (от низкого риска к высокому)

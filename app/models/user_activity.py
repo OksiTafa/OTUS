@@ -11,12 +11,11 @@ import ctypes
 from ctypes import wintypes
 from app.models.base_collector import BaseCollector
 
+
 class LASTINPUTINFO(ctypes.Structure):
     """Для определения времени бездействия"""
-    _fields_ = [
-        ("cbSize", wintypes.UINT),
-        ("dwTime", wintypes.DWORD)
-    ]
+
+    _fields_ = [("cbSize", wintypes.UINT), ("dwTime", wintypes.DWORD)]
 
 
 class UserActivityTracker(BaseCollector):
@@ -29,11 +28,7 @@ class UserActivityTracker(BaseCollector):
         window = gw.getActiveWindow()
 
         if not window:
-            return {
-                'window_title': 'Unknown',
-                'process_name': 'Unknown',
-                'pid': 0
-            }
+            return {"window_title": "Unknown", "process_name": "Unknown", "pid": 0}
 
         # Получаем PID через Windows API
         pid = self._get_pid_from_hwnd(window._hWnd)
@@ -41,11 +36,7 @@ class UserActivityTracker(BaseCollector):
         # Получаем имя процесса через psutil
         process_name = self._get_process_name(pid)
 
-        return {
-            'window_title': window.title,
-            'process_name': process_name,
-            'pid': pid
-        }
+        return {"window_title": window.title, "process_name": process_name, "pid": pid}
 
     def collect_activity(self) -> dict:
         """
@@ -54,19 +45,18 @@ class UserActivityTracker(BaseCollector):
         idle_seconds = self._get_idle_seconds()
 
         return {
-            'idle_seconds': idle_seconds,
-            'state': self._get_state(idle_seconds),
-            'is_active': idle_seconds < 60
+            "idle_seconds": idle_seconds,
+            "state": self._get_state(idle_seconds),
+            "is_active": idle_seconds < 60,
         }
 
     def collect(self):
         """Единый метод: собирает и окно, и активность"""
         self.metrics = {
-            "window" : self.collect_window(),
-            "activity" : self.collect_activity()
+            "window": self.collect_window(),
+            "activity": self.collect_activity(),
         }
         return self.metrics
-
 
     def _get_pid_from_hwnd(self, hwnd) -> int:
         """Получает PID процесса по handle окна"""
@@ -90,7 +80,7 @@ class UserActivityTracker(BaseCollector):
         if ctypes.windll.user32.GetLastInputInfo(ctypes.byref(last_input)):
             millis = ctypes.windll.kernel32.GetTickCount() - last_input.dwTime
             if millis < 0:
-                millis += 2 ** 32
+                millis += 2**32
             return millis / 1000.0
 
         return 0.0
@@ -101,4 +91,3 @@ class UserActivityTracker(BaseCollector):
             return "активен"
         else:
             return "не активен"
-

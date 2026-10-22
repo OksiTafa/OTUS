@@ -6,6 +6,7 @@ class ProcessClassifier:
     Классифицирует процессы по категориям.
     Определяет, чем занимается пользователь.
     """
+
     def classify(self, process_name: str) -> str:
         if not process_name:
             return "unknown"

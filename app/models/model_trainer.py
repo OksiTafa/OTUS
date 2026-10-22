@@ -68,7 +68,8 @@ def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
     переименовываются по TRACKER_TO_MODEL.
     """
     rename = {
-        src: dst for src, dst in TRACKER_TO_MODEL.items()
+        src: dst
+        for src, dst in TRACKER_TO_MODEL.items()
         if src in df.columns and dst not in df.columns
     }
     X = df.rename(columns=rename)
@@ -115,9 +116,7 @@ class BurnoutModelTrainer:
         self.data = pd.read_csv(path)
         missing = set(REQUIRED_COLUMNS) - set(self.data.columns)
         if missing:
-            raise ValueError(
-                f"В {path.name} отсутствуют колонки: {sorted(missing)}"
-            )
+            raise ValueError(f"В {path.name} отсутствуют колонки: {sorted(missing)}")
         unknown = set(self.data[TARGET].dropna()) - set(self.classes)
         if unknown:
             raise ValueError(

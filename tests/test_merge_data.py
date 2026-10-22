@@ -28,8 +28,12 @@ def feature_row(user, date, **values):
 def make_features_csv(tmp_path, rows=None):
     if rows is None:
         rows = [
-            feature_row("Иванов И.И.", "2026-10-01", work_hours=4.0, after_hours_work=1),
-            feature_row("Иванов И.И.", "2026-10-02", work_hours=6.0, after_hours_work=0),
+            feature_row(
+                "Иванов И.И.", "2026-10-01", work_hours=4.0, after_hours_work=1
+            ),
+            feature_row(
+                "Иванов И.И.", "2026-10-02", work_hours=6.0, after_hours_work=0
+            ),
             feature_row("Петров П.П.", "2026-10-01", work_hours=2.0),
         ]
     path = tmp_path / "features.csv"
@@ -78,7 +82,9 @@ class TestLoad:
 
     def test_features_without_user(self, tmp_path):
         path = tmp_path / "features.csv"
-        pd.DataFrame([{"date": "2026-10-01", "work_hours": 1}]).to_csv(path, index=False)
+        pd.DataFrame([{"date": "2026-10-01", "work_hours": 1}]).to_csv(
+            path, index=False
+        )
         with pytest.raises(ValueError, match="user"):
             DataMerger(features_file=path).load_features()
 
@@ -122,7 +128,9 @@ class TestAggregate:
             feature_row("Иванов И.И.", "2026-10-10", work_hours=2.0),
             feature_row("Иванов И.И.", "2026-10-11", work_hours=4.0),
         ]
-        merger = DataMerger(features_file=make_features_csv(tmp_path, rows), window_days=7)
+        merger = DataMerger(
+            features_file=make_features_csv(tmp_path, rows), window_days=7
+        )
         ivan = merger.aggregate().set_index("user").loc["Иванов И.И."]
         assert ivan["days_count"] == 2
         assert ivan["work_hours"] == pytest.approx(3.0)
@@ -132,7 +140,9 @@ class TestAggregate:
             feature_row("Иванов И.И.", "2026-09-01"),
             feature_row("Иванов И.И.", "2026-10-11"),
         ]
-        merger = DataMerger(features_file=make_features_csv(tmp_path, rows), window_days=0)
+        merger = DataMerger(
+            features_file=make_features_csv(tmp_path, rows), window_days=0
+        )
         assert merger.aggregate().iloc[0]["days_count"] == 2
 
 
@@ -155,11 +165,13 @@ class TestMergeProcess:
     def test_columns_order(self, tmp_path):
         merged = self.make_merger(tmp_path).process()
         expected_start = ["user"] + questionnaire_columns()
-        assert merged.columns.tolist()[:len(expected_start)] == expected_start
+        assert merged.columns.tolist()[: len(expected_start)] == expected_start
 
     def test_service_columns_dropped(self, tmp_path):
         merged = self.make_merger(tmp_path).process()
-        assert not {"timestamp", "Ваш возраст?", "q1", "full_name"} & set(merged.columns)
+        assert not {"timestamp", "Ваш возраст?", "q1", "full_name"} & set(
+            merged.columns
+        )
 
     def test_merged_shape_and_keys(self, tmp_path):
         merged = self.make_merger(tmp_path).process()

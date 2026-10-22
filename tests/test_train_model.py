@@ -21,24 +21,26 @@ def make_dataset(n: int = 900) -> pd.DataFrame:
     screen = (work + rng.normal(3, 1.5, n)).clip(5, 19)
     meetings = rng.integers(0, 10, n)
     sleep = rng.uniform(4, 9, n)
-    stress = (6 * work + 2 * screen + 3 * meetings - 4 * sleep + rng.normal(0, 8, n))
+    stress = 6 * work + 2 * screen + 3 * meetings - 4 * sleep + rng.normal(0, 8, n)
     stress = 100 * (stress - stress.min()) / (stress.max() - stress.min())
     level = np.where(stress >= 70, "High", np.where(stress >= 35, "Medium", "Low"))
 
-    df = pd.DataFrame({
-        "age": rng.integers(20, 45, n),
-        "experience_years": rng.integers(0, 20, n),
-        "daily_work_hours": work.round(2),
-        "sleep_hours": sleep.round(2),
-        "caffeine_intake": rng.integers(0, 8, n),
-        "bugs_per_day": rng.integers(0, 20, n),
-        "commits_per_day": rng.integers(0, 30, n),
-        "meetings_per_day": meetings,
-        "screen_time": screen.round(2),
-        "exercise_hours": rng.uniform(0, 2, n).round(2),
-        "stress_level": stress.round(2),
-        "burnout_level": level,
-    })
+    df = pd.DataFrame(
+        {
+            "age": rng.integers(20, 45, n),
+            "experience_years": rng.integers(0, 20, n),
+            "daily_work_hours": work.round(2),
+            "sleep_hours": sleep.round(2),
+            "caffeine_intake": rng.integers(0, 8, n),
+            "bugs_per_day": rng.integers(0, 20, n),
+            "commits_per_day": rng.integers(0, 30, n),
+            "meetings_per_day": meetings,
+            "screen_time": screen.round(2),
+            "exercise_hours": rng.uniform(0, 2, n).round(2),
+            "stress_level": stress.round(2),
+            "burnout_level": level,
+        }
+    )
     # Пропуски, как в реальном датасете
     df.loc[rng.random(n) < 0.02, "sleep_hours"] = np.nan
     df.loc[rng.random(n) < 0.02, "burnout_level"] = np.nan
@@ -94,24 +96,40 @@ class TestPrepareFeatures:
         assert list(X.columns) == MODEL_FEATURES
 
     def test_tracker_columns_renamed(self):
-        tracker = pd.DataFrame([{
-            "user": "Иванов И.И.", "date": "2026-10-15", "day_type": "Weekday",
-            "scheduled_hours": 9.0, "overtime_hours": 0.5, "daily_work_hours": 9.5,
-            "work_hours": 4.0, "screen_time_hours": 6.0,
-            "meetings_count": 2, "breaks_taken": 3, "after_hours_work": 1,
-            "sleep_hours": 7.0,
-        }])
+        tracker = pd.DataFrame(
+            [
+                {
+                    "user": "Иванов И.И.",
+                    "date": "2026-10-15",
+                    "day_type": "Weekday",
+                    "scheduled_hours": 9.0,
+                    "overtime_hours": 0.5,
+                    "daily_work_hours": 9.5,
+                    "work_hours": 4.0,
+                    "screen_time_hours": 6.0,
+                    "meetings_count": 2,
+                    "breaks_taken": 3,
+                    "after_hours_work": 1,
+                    "sleep_hours": 7.0,
+                }
+            ]
+        )
         X = prepare_features(tracker)
         assert list(X.columns) == MODEL_FEATURES
         assert X.iloc[0].to_dict() == {
-            "daily_work_hours": 9.5, "screen_time": 6.0,
-            "meetings_per_day": 2, "sleep_hours": 7.0,
+            "daily_work_hours": 9.5,
+            "screen_time": 6.0,
+            "meetings_per_day": 2,
+            "sleep_hours": 7.0,
         }
 
     def test_missing_feature(self):
         with pytest.raises(ValueError, match="screen_time"):
-            prepare_features(pd.DataFrame([{"daily_work_hours": 9, "sleep_hours": 7,
-                                            "meetings_count": 1}]))
+            prepare_features(
+                pd.DataFrame(
+                    [{"daily_work_hours": 9, "sleep_hours": 7, "meetings_count": 1}]
+                )
+            )
 
 
 class TestPreprocess:
@@ -138,8 +156,14 @@ class TestTrain:
 
         assert set(trainer.models) == {"random_forest", "gradient_boosting"}
         for m in trainer.metrics.values():
-            for key in ("accuracy", "f1_macro", "roc_auc",
-                        "recall_low", "recall_medium", "recall_high"):
+            for key in (
+                "accuracy",
+                "f1_macro",
+                "roc_auc",
+                "recall_low",
+                "recall_medium",
+                "recall_high",
+            ):
                 assert 0.0 <= m[key] <= 1.0
             assert len(m["confusion_matrix"]) == 3
 
@@ -184,6 +208,8 @@ class TestSave:
         assert {"f1_macro", "roc_auc", "recall_high"} <= set(report.columns)
         assert report["is_best"].sum() == 1
 
-        matrix = (out_dir / "confusion_matrix_random_forest.txt").read_text(encoding="utf-8")
+        matrix = (out_dir / "confusion_matrix_random_forest.txt").read_text(
+            encoding="utf-8"
+        )
         assert "true_High" in matrix and "pred_Low" in matrix
         assert (out_dir / "confusion_matrix_gradient_boosting.txt").exists()

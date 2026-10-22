@@ -5,8 +5,13 @@ import pytest
 
 from app.models.questionnaire import MBIQuestionnaireProcessor
 
-
-SERVICE_HEADER = ["Отметка времени", "Ваш возраст?", "ФИО", "Ваш пол?", "Стаж работы в годах?"]
+SERVICE_HEADER = [
+    "Отметка времени",
+    "Ваш возраст?",
+    "ФИО",
+    "Ваш пол?",
+    "Стаж работы в годах?",
+]
 ITEMS_HEADER = [f"q{i}" for i in range(1, 16)]
 
 

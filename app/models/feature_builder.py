@@ -61,7 +61,9 @@ class DailyFeatureBuilder:
         :param work_start: начало рабочего дня ЧЧ:ММ (по умолчанию WORK_DAY_START)
         :param work_end: конец рабочего дня ЧЧ:ММ (по умолчанию WORK_DAY_END)
         """
-        self.tracker_file = Path(tracker_file) if tracker_file else settings.TRACKER_FILE
+        self.tracker_file = (
+            Path(tracker_file) if tracker_file else settings.TRACKER_FILE
+        )
         self.user = user or settings.USER_NAME.strip() or None
         self.work_start = self._parse_time(work_start or settings.WORK_DAY_START)
         self.work_end = self._parse_time(work_end or settings.WORK_DAY_END)
@@ -83,8 +85,7 @@ class DailyFeatureBuilder:
         path = Path(file_path) if file_path else self.tracker_file
         if not path.exists():
             raise FileNotFoundError(
-                f"Файл метрик трекера не найден: {path}. "
-                f"Запустите команду collect."
+                f"Файл метрик трекера не найден: {path}. " f"Запустите команду collect."
             )
 
         df = pd.read_csv(path)
@@ -162,7 +163,11 @@ class DailyFeatureBuilder:
         """Интервал между замерами: медиана по данным, иначе из настроек."""
         diffs = df["timestamp"].diff().dt.total_seconds().dropna()
         diffs = diffs[diffs > 0]
-        return float(diffs.median()) if not diffs.empty else float(settings.COLLECTION_INTERVAL)
+        return (
+            float(diffs.median())
+            if not diffs.empty
+            else float(settings.COLLECTION_INTERVAL)
+        )
 
     # ------------------------------------------------------------------
     # Признаки одного пользователя
@@ -205,11 +210,17 @@ class DailyFeatureBuilder:
         for date, day in busy.groupby("date"):
             same_day = day["prev_date"] == date
             idle = day.loc[same_day, "idle_minutes"]
-            breaks = idle.between(settings.BREAK_MIN_MINUTES, settings.BREAK_MAX_MINUTES)
+            breaks = idle.between(
+                settings.BREAK_MIN_MINUTES, settings.BREAK_MAX_MINUTES
+            )
 
             minute_of_day = day["timestamp"].dt.hour * 60 + day["timestamp"].dt.minute
-            outside = (minute_of_day < self.work_start) | (minute_of_day >= self.work_end)
-            after_hours = outside.sum() * interval / 60 >= settings.AFTER_HOURS_MIN_MINUTES
+            outside = (minute_of_day < self.work_start) | (
+                minute_of_day >= self.work_end
+            )
+            after_hours = (
+                outside.sum() * interval / 60 >= settings.AFTER_HOURS_MIN_MINUTES
+            )
 
             # Сон: простой перед первой активностью дня, если трекер
             # писал без разрывов и простой не длиннее SLEEP_MAX_HOURS;
@@ -234,20 +245,22 @@ class DailyFeatureBuilder:
                 scheduled = (self.work_end - self.work_start) / 60
                 overtime = outside.sum() * hours
 
-            rows.append({
-                "user": user,
-                "date": date,
-                "day_type": "Weekend" if is_weekend else "Weekday",
-                "scheduled_hours": round(scheduled, 2),
-                "overtime_hours": round(overtime, 2),
-                "daily_work_hours": round(scheduled + overtime, 2),
-                "work_hours": round(day["is_work"].sum() * hours, 2),
-                "screen_time_hours": round(len(day) * hours, 2),
-                "meetings_count": self._count_meetings(call_times, interval),
-                "breaks_taken": int(breaks.sum()),
-                "after_hours_work": int(after_hours),
-                "sleep_hours": round(sleep, 2),
-            })
+            rows.append(
+                {
+                    "user": user,
+                    "date": date,
+                    "day_type": "Weekend" if is_weekend else "Weekday",
+                    "scheduled_hours": round(scheduled, 2),
+                    "overtime_hours": round(overtime, 2),
+                    "daily_work_hours": round(scheduled + overtime, 2),
+                    "work_hours": round(day["is_work"].sum() * hours, 2),
+                    "screen_time_hours": round(len(day) * hours, 2),
+                    "meetings_count": self._count_meetings(call_times, interval),
+                    "breaks_taken": int(breaks.sum()),
+                    "after_hours_work": int(after_hours),
+                    "sleep_hours": round(sleep, 2),
+                }
+            )
 
         total_days = df["date"].nunique()
         if total_days > len(rows):

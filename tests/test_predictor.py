@@ -25,11 +25,18 @@ def model_file(tmp_path_factory):
 
 def feature_row(user, date, daily, screen, meetings, sleep):
     return {
-        "user": user, "date": date, "day_type": "Weekday",
-        "scheduled_hours": 9.0, "overtime_hours": daily - 9.0,
-        "daily_work_hours": daily, "work_hours": screen / 2,
-        "screen_time_hours": screen, "meetings_count": meetings,
-        "breaks_taken": 3, "after_hours_work": int(daily > 9), "sleep_hours": sleep,
+        "user": user,
+        "date": date,
+        "day_type": "Weekday",
+        "scheduled_hours": 9.0,
+        "overtime_hours": daily - 9.0,
+        "daily_work_hours": daily,
+        "work_hours": screen / 2,
+        "screen_time_hours": screen,
+        "meetings_count": meetings,
+        "breaks_taken": 3,
+        "after_hours_work": int(daily > 9),
+        "sleep_hours": sleep,
     }
 
 
@@ -81,8 +88,11 @@ class TestPredict:
     def test_predicted_level_is_argmax(self, tmp_path, model_file):
         _, result = predict(tmp_path, model_file)
         for user, row in result.iterrows():
-            probs = {"Low": row["prob_low"], "Medium": row["prob_medium"],
-                     "High": row["prob_high"]}
+            probs = {
+                "Low": row["prob_low"],
+                "Medium": row["prob_medium"],
+                "High": row["prob_high"],
+            }
             assert row["predicted_level"] == max(probs, key=probs.get)
             assert row["prediction"] == PREDICTION_TEXT[row["predicted_level"]]
 
@@ -127,5 +137,12 @@ def test_save(tmp_path, model_file):
     out = predictor.save(tmp_path / "out" / "predictions.csv")
     saved = pd.read_csv(out, encoding="utf-8-sig")
     assert set(saved["user"]) == {TIRED, RESTED}
-    assert {"prob_low", "prob_medium", "prob_high", "predicted_level",
-            "prediction", "mbi_level", "match"} <= set(saved.columns)
+    assert {
+        "prob_low",
+        "prob_medium",
+        "prob_high",
+        "predicted_level",
+        "prediction",
+        "mbi_level",
+        "match",
+    } <= set(saved.columns)

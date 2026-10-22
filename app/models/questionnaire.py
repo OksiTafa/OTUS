@@ -36,11 +36,11 @@ class MBIQuestionnaireProcessor:
     """
 
     def __init__(
-            self,
-            file_path,
-            skip_columns: int = None,
-            items_count: int = None,
-            answer_labels: dict = None,
+        self,
+        file_path,
+        skip_columns: int = None,
+        items_count: int = None,
+        answer_labels: dict = None,
     ):
         self.file_path = Path(file_path)
         self.skip_columns = (
@@ -78,7 +78,7 @@ class MBIQuestionnaireProcessor:
             )
 
         answers_raw = self._raw.iloc[
-            :, self.skip_columns:self.skip_columns + self.items_count
+            :, self.skip_columns : self.skip_columns + self.items_count
         ]
         self._answers = answers_raw.map(self._to_numeric)
         self._answers.columns = [f"q{i + 1}" for i in range(self.items_count)]
@@ -155,8 +155,11 @@ class MBIQuestionnaireProcessor:
         for scale_name, cfg in settings.MBI_SUBSCALES.items():
             thresholds = settings.MBI_THRESHOLDS[scale_name]
             levels[f"{scale_name}_level"] = self.scores[scale_name].apply(
-                lambda s: LEVEL_NAMES[self.classify_scale(s, thresholds)]
-                if not pd.isna(s) else ""
+                lambda s: (
+                    LEVEL_NAMES[self.classify_scale(s, thresholds)]
+                    if not pd.isna(s)
+                    else ""
+                )
             )
 
             # Признак "сильный риск" по шкале (по правилам выгорания)
@@ -168,9 +171,11 @@ class MBIQuestionnaireProcessor:
             burnout_flags.append(risk.fillna(False))
 
             # Тяжесть по шкале: 0..2, для обратной шкалы — наоборот
-            level_index = self.scores[scale_name].apply(
-                lambda s: self.classify_scale(s, thresholds)
-            ).astype(float)
+            level_index = (
+                self.scores[scale_name]
+                .apply(lambda s: self.classify_scale(s, thresholds))
+                .astype(float)
+            )
             severities.append(2 - level_index if cfg["reversed"] else level_index)
 
         levels["burnout"] = pd.concat(burnout_flags, axis=1).any(axis=1).astype(int)
@@ -223,7 +228,7 @@ class MBIQuestionnaireProcessor:
         self.classify()
 
         service = self._normalize_service_columns(
-            self._raw.iloc[:, :self.skip_columns].reset_index(drop=True)
+            self._raw.iloc[:, : self.skip_columns].reset_index(drop=True)
         )
         result = pd.concat([service, self._answers, self.scores, self.levels], axis=1)
         self.results = result

@@ -39,7 +39,7 @@ def build_parser() -> argparse.ArgumentParser:
     questionnaire_parser.add_argument(
         "--file",
         help="CSV с ответами Google Forms "
-             "(по умолчанию data/questionnaire/answers.csv)",
+        "(по умолчанию data/questionnaire/answers.csv)",
     )
 
     features_parser = subparsers.add_parser(
@@ -68,7 +68,7 @@ def build_parser() -> argparse.ArgumentParser:
     train_parser.add_argument(
         "--file",
         help="CSV с обучающим датасетом "
-             "(по умолчанию data/developer_burnout_7000.zip)",
+        "(по умолчанию data/developer_burnout_7000.zip)",
     )
 
     merge_parser = subparsers.add_parser(

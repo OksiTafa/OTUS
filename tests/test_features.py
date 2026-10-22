@@ -76,26 +76,23 @@ class TestLoad:
 
 class TestTime:
     def test_screen_and_work_hours(self, tmp_path):
-        rows = (
-            minutes("2026-10-15 10:00", 60, process="code.exe")
-            + minutes("2026-10-15 11:00", 30, process="chrome.exe")
+        rows = minutes("2026-10-15 10:00", 60, process="code.exe") + minutes(
+            "2026-10-15 11:00", 30, process="chrome.exe"
         )
         f = day(build(tmp_path, rows), "2026-10-15")
         assert f["screen_time_hours"] == 1.5
         assert f["work_hours"] == 1.0
 
     def test_lock_screen_is_idle(self, tmp_path):
-        rows = (
-            minutes("2026-10-15 10:00", 30)
-            + minutes("2026-10-15 10:30", 30, process="LockApp.exe", active=True)
+        rows = minutes("2026-10-15 10:00", 30) + minutes(
+            "2026-10-15 10:30", 30, process="LockApp.exe", active=True
         )
         f = day(build(tmp_path, rows), "2026-10-15")
         assert f["screen_time_hours"] == 0.5
 
     def test_day_without_activity_skipped(self, tmp_path):
-        rows = (
-            minutes("2026-10-15 10:00", 10)
-            + minutes("2026-10-16 10:00", 10, process="LockApp.exe", active=False)
+        rows = minutes("2026-10-15 10:00", 10) + minutes(
+            "2026-10-16 10:00", 10, process="LockApp.exe", active=False
         )
         features = build(tmp_path, rows)
         assert features["date"].astype(str).tolist() == ["2026-10-15"]
@@ -107,8 +104,9 @@ class TestTime:
 
 class TestCalls:
     def test_call_without_input_is_busy(self, tmp_path):
-        rows = minutes("2026-10-15 10:00", 10, process="app.exe",
-                       title="Звонок", active=False)
+        rows = minutes(
+            "2026-10-15 10:00", 10, process="app.exe", title="Звонок", active=False
+        )
         f = day(build(tmp_path, rows), "2026-10-15")
         assert f["screen_time_hours"] == round(10 / 60, 2)
         assert f["work_hours"] == round(10 / 60, 2)
@@ -136,11 +134,11 @@ class TestBreaks:
     def test_breaks_between_min_and_max(self, tmp_path):
         rows = (
             minutes("2026-10-15 10:00", 30)
-            + minutes("2026-10-15 10:30", 10, active=False)   # перерыв 10 мин
+            + minutes("2026-10-15 10:30", 10, active=False)  # перерыв 10 мин
             + minutes("2026-10-15 10:40", 30)
-            + minutes("2026-10-15 11:10", 2, active=False)    # слишком короткий
+            + minutes("2026-10-15 11:10", 2, active=False)  # слишком короткий
             + minutes("2026-10-15 11:12", 30)
-            + minutes("2026-10-15 11:42", 90, active=False)   # слишком длинный
+            + minutes("2026-10-15 11:42", 90, active=False)  # слишком длинный
             + minutes("2026-10-15 13:12", 10)
         )
         assert day(build(tmp_path, rows), "2026-10-15")["breaks_taken"] == 1
@@ -159,9 +157,9 @@ class TestCalendar:
 
     def test_custom_work_day(self, tmp_path):
         rows = (
-            minutes("2026-10-15 08:30", 10)     # в рабочее время 8:30–17:30
-            + minutes("2026-10-16 08:15", 20)   # 15 мин до начала
-            + minutes("2026-10-19 17:25", 20)   # 15 мин после конца
+            minutes("2026-10-15 08:30", 10)  # в рабочее время 8:30–17:30
+            + minutes("2026-10-16 08:15", 20)  # 15 мин до начала
+            + minutes("2026-10-19 17:25", 20)  # 15 мин после конца
         )
         features = build(tmp_path, rows, work_start="08:30", work_end="17:30")
         assert (features["scheduled_hours"] == 9.0).all()
@@ -170,13 +168,13 @@ class TestCalendar:
         assert day(features, "2026-10-19")["after_hours_work"] == 1
 
     def test_after_hours_below_threshold(self, tmp_path):
-        rows = minutes("2026-10-15 18:55", 14)   # 9 мин после 19:00
+        rows = minutes("2026-10-15 18:55", 14)  # 9 мин после 19:00
         f = day(build(tmp_path, rows), "2026-10-15")
         assert f["after_hours_work"] == 0
 
     def test_after_hours_threshold_from_settings(self, tmp_path, monkeypatch):
         monkeypatch.setattr(settings, "AFTER_HOURS_MIN_MINUTES", 1)
-        rows = minutes("2026-10-15 18:55", 6)    # 1 мин после 19:00
+        rows = minutes("2026-10-15 18:55", 6)  # 1 мин после 19:00
         f = day(build(tmp_path, rows), "2026-10-15")
         assert f["after_hours_work"] == 1
 
@@ -195,24 +193,30 @@ class TestCalendar:
 
     def test_overtime_weekday(self, tmp_path):
         rows = (
-            minutes("2026-10-15 08:00", 30)     # 30 мин до 8:30
-            + minutes("2026-10-15 12:00", 60)   # в графике
-            + minutes("2026-10-15 17:30", 60)   # 60 мин после 17:30
+            minutes("2026-10-15 08:00", 30)  # 30 мин до 8:30
+            + minutes("2026-10-15 12:00", 60)  # в графике
+            + minutes("2026-10-15 17:30", 60)  # 60 мин после 17:30
         )
-        f = day(build(tmp_path, rows, work_start="08:30", work_end="17:30"), "2026-10-15")
+        f = day(
+            build(tmp_path, rows, work_start="08:30", work_end="17:30"), "2026-10-15"
+        )
         assert f["scheduled_hours"] == 9.0
         assert f["overtime_hours"] == 1.5
         assert f["daily_work_hours"] == 10.5
 
     def test_no_overtime(self, tmp_path):
         rows = minutes("2026-10-15 10:00", 60)
-        f = day(build(tmp_path, rows, work_start="08:30", work_end="17:30"), "2026-10-15")
+        f = day(
+            build(tmp_path, rows, work_start="08:30", work_end="17:30"), "2026-10-15"
+        )
         assert f["overtime_hours"] == 0
         assert f["daily_work_hours"] == 9.0
 
     def test_weekend_all_activity_is_overtime(self, tmp_path):
-        rows = minutes("2026-10-17 12:00", 90)   # суббота, в часы графика
-        f = day(build(tmp_path, rows, work_start="08:30", work_end="17:30"), "2026-10-17")
+        rows = minutes("2026-10-17 12:00", 90)  # суббота, в часы графика
+        f = day(
+            build(tmp_path, rows, work_start="08:30", work_end="17:30"), "2026-10-17"
+        )
         assert f["scheduled_hours"] == 0
         assert f["overtime_hours"] == 1.5
         assert f["daily_work_hours"] == 1.5
@@ -227,8 +231,8 @@ class TestCalendar:
 class TestSleep:
     def test_night_idle_is_sleep(self, tmp_path):
         rows = (
-            minutes("2026-10-15 22:00", 60)                      # до 22:59
-            + minutes("2026-10-15 23:00", 480, active=False)     # до 06:59
+            minutes("2026-10-15 22:00", 60)  # до 22:59
+            + minutes("2026-10-15 23:00", 480, active=False)  # до 06:59
             + minutes("2026-10-16 07:00", 10)
         )
         f = day(build(tmp_path, rows), "2026-10-16")
@@ -279,7 +283,8 @@ class TestSaveAccumulates:
 
         saved = pd.read_csv(out, encoding="utf-8-sig")
         assert saved.groupby("user").size().to_dict() == {
-            "Иванов И.И.": 1, "Петров П.П.": 2,
+            "Иванов И.И.": 1,
+            "Петров П.П.": 2,
         }
 
     def test_same_user_replaced(self, tmp_path):
