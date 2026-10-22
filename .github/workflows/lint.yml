@@ -1,0 +1,30 @@
+# Проверка стиля кода: black (форматирование) и flake8 (ошибки и стиль).
+# Зависимости проекта не нужны, поэтому достаточно Linux-runner.
+name: Lint
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Получить код
+        uses: actions/checkout@v4
+
+      - name: Установить Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Установить линтеры
+        run: pip install black==26.5.1 flake8==7.3.0
+
+      - name: Проверить форматирование (black)
+        run: black --check --diff .
+
+      - name: Проверить код (flake8)
+        run: flake8 .
