@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import patch
 from django.urls import reverse
 from store_app.models import Product
 
@@ -18,10 +19,25 @@ def test_product_changelist(admin_client, product):
 
 
 @pytest.mark.django_db
-def test_apply_discount(admin_client, product):
-    run_action(admin_client, "apply_discount", [product])
+def test_apply_discount(admin_client, category, product, django_capture_on_commit_callbacks):
+    discounted = Product.objects.create(name="Наушники", description="Беспроводные наушники",
+                                        price=3000, discount=5, category=category)
+
+    with patch("store_app.admin.send_discount_mailing.delay") as mailing:
+        with django_capture_on_commit_callbacks(execute=True):
+            response = run_action(admin_client, "apply_discount", [product, discounted])
     product.refresh_from_db()
     assert product.discount == 5
+    # рассылка только по товару, у которого скидки ещё не было
+    mailing.assert_called_once_with([product.pk])
+    assert "Скидка добавлена к 1 товарам, рассылка запущена" in response.content.decode()
+
+    # повторно скидка не добавляется и рассылка не запускается
+    with patch("store_app.admin.send_discount_mailing.delay") as mailing:
+        with django_capture_on_commit_callbacks(execute=True):
+            response = run_action(admin_client, "apply_discount", [product])
+    mailing.assert_not_called()
+    assert "У выбранных товаров скидка 5% уже есть" in response.content.decode()
 
 
 @pytest.mark.django_db

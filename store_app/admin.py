@@ -1,5 +1,9 @@
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.db import transaction
 from .models import Product, Category
+from .tasks import send_discount_mailing
+
+DISCOUNT_PERCENT = 5
 
 
 # Register your models here.
@@ -13,10 +17,29 @@ class ProductAdmin(admin.ModelAdmin):
 
     @admin.action(description="Добавить скидку 5%%")
     def apply_discount(self, request, queryset):
-        """Применяет скидку 5% к выбранным товарам"""
+        """Применяет скидку 5% к выбранным товарам и запускает рассылку"""
+        changed_ids = []
         for product in queryset:
-            product.discount = 5
-            product.save()
+            if product.discount != DISCOUNT_PERCENT:  # о старой скидке повторно не пишем
+                product.discount = DISCOUNT_PERCENT
+                product.save()
+                changed_ids.append(product.pk)
+
+        if changed_ids:
+            # задача уходит в Celery только после сохранения изменений в БД
+            transaction.on_commit(lambda: send_discount_mailing.delay(changed_ids))
+            self.message_user(request, f'Скидка добавлена к {len(changed_ids)} товарам, рассылка запущена')
+        else:
+            self.message_user(request, 'У выбранных товаров скидка 5% уже есть', messages.WARNING)
+
+    @admin.action(description="Убрать скидку")
+    def remove_discount(self, request, queryset):
+        """Убирает скидку у выбранных товаров"""
+        count = queryset.exclude(discount=0).update(discount=0)
+        if count:
+            self.message_user(request, f'Скидка убрана у {count} товаров')
+        else:
+            self.message_user(request, 'У выбранных товаров нет скидки', messages.WARNING)
 
     @admin.action(description="Добавить 'Товар дня!' к описанию")
     def add_promo_to_description(self, request, queryset):
@@ -39,7 +62,7 @@ class ProductAdmin(admin.ModelAdmin):
                 count += 1
         self.message_user(request, f'Промо убрано из {count} товаров')
 
-    actions = (apply_discount, add_promo_to_description, remove_promo_from_description)
+    actions = (apply_discount, remove_discount, add_promo_to_description, remove_promo_from_description)
 
 
 @admin.register(Category)
