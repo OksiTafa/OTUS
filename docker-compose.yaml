@@ -1,0 +1,54 @@
+services:
+  blog:
+    build:
+      context: ./
+      dockerfile: docker-build/blog-app/Dockerfile
+    environment:
+      BLOG_APP__DB__HOST: pg
+      BLOG_APP__DB__NAME: ${PG_DB}
+      BLOG_APP__DB__USER: ${PG_USER}
+      BLOG_APP__DB__PASSWORD: ${PG_PASSWORD}
+      BLOG_APP__APP__SECRET_KEY: ${SECRET_KEY}
+    command:
+      - "gunicorn"
+      - "app:app"
+      - "--workers"
+      - "2"
+      - "--bind"
+      - "0.0.0.0:8000"
+      - "--access-logfile"
+      - "-"
+    expose:
+      - "8000"
+    depends_on:
+      pg:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:1.27-alpine
+    volumes:
+      - ./docker-build/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "8080:80"
+    depends_on:
+      - blog
+
+  pg:
+    image: postgres:18.3-alpine
+    environment:
+      PGDATA: /var/lib/postgresql/18/docker
+      POSTGRES_DB: ${PG_DB}
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+    volumes:
+      - pg-data:/var/lib/postgresql/18/docker
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready" ]
+      interval: 2s
+      timeout: 1s
+      retries: 3
+
+volumes:
+  pg-data:

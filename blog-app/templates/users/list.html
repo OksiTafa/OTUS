@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Пользователи{% endblock %}
+{% block content %}
+<h1>Пользователи</h1>
+{% for user in users %}
+    <div class="card">
+        <strong>{{ user.name }}</strong> @{{ user.username }}
+        <div class="muted">{{ user.email }} · постов: {{ user.posts|length }}</div>
+    </div>
+{% else %}
+    <p>Пользователей пока нет. <a href="{{ url_for('users.add_user') }}">Добавить</a></p>
+{% endfor %}
+{% endblock %}

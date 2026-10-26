@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Посты{% endblock %}
+{% block content %}
+<h1>Посты</h1>
+{% for post in posts %}
+    <div class="card">
+        <h3>{{ post.title }}</h3>
+        <p>{{ post.body }}</p>
+        <div class="muted">@{{ post.user.username }} · {{ post.created_at.strftime("%d.%m.%Y %H:%M") }}</div>
+    </div>
+{% else %}
+    <p>Постов пока нет. <a href="{{ url_for('posts.add_post') }}">Добавить первый</a></p>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Новый пост{% endblock %}
+{% block content %}
+<h1>Новый пост</h1>
+<form method="post">
+    <p>
+        <label for="user_id">Автор</label>
+        <select id="user_id" name="user_id" required>
+            {% for user in users %}
+                <option value="{{ user.id }}" {% if form.get('user_id') == user.id|string %}selected{% endif %}>
+                    {{ user.name }} (@{{ user.username }})
+                </option>
+            {% endfor %}
+        </select>
+    </p>
+    <p>
+        <label for="title">Заголовок</label>
+        <input id="title" name="title" maxlength="200" required value="{{ form.get('title', '') }}">
+    </p>
+    <p>
+        <label for="body">Текст</label>
+        <textarea id="body" name="body" rows="6" required>{{ form.get('body', '') }}</textarea>
+    </p>
+    <button type="submit">Сохранить</button>
+</form>
+{% endblock %}
